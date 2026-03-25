@@ -1,0 +1,19 @@
+# Thalamus proxy
+#
+# 1. cp .env.example .env  (set CURSOR_TOKEN or leave blank for browser login)
+# 2. docker compose up --build
+# 3. Open http://localhost:3013/cursor/login if you need to sign in
+#
+# To persist a token saved by browser login across container rebuilds, add a bind
+# mount only after .env exists as a file:  volumes: [ "./.env:/app/.env" ]
+services:
+  thalamus:
+    build: .
+    image: thalamus:latest
+    ports:
+      - "${PORT:-3013}:${PORT:-3013}"
+    environment:
+      PORT: ${PORT:-3013}
+    env_file:
+      - .env
+    restart: unless-stopped

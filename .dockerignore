@@ -1,0 +1,33 @@
+.git
+.gitignore
+.venv
+venv
+__pycache__
+*.py[cod]
+*$py.class
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.env
+*.egg-info
+dist
+build
+
+# Large / non-runtime
+sp_leak_results
+logs
+desktop-app/node_modules
+desktop-app/dist
+*.md
+assets
+.cursor
+
+# Local experiments (not imported by server)
+experiment_*.py
+test_*.py
+tests
+analyze_*.py
+dump_*.py
+grab_*.py
+extract_*.py
+test_puzzle

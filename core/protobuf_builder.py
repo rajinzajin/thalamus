@@ -58,7 +58,7 @@ def parse_multimodal_content(content) -> dict:
                         }
 
         return {
-            "content": "\n".join(text_parts) or "[用户发送了图片]",
+            "content": "\n".join(text_parts) or "[User sent an image]",
             "image": image_data,
         }
 
