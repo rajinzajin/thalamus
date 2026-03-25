@@ -6,7 +6,8 @@ import json
 import os
 import webbrowser
 from pathlib import Path
-from urllib.request import urlopen, Request
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 
 THALAMUS_PORT = int(os.environ.get("THALAMUS_PORT", "3013"))
 UI_PORT = int(os.environ.get("UI_PORT", "3014"))
@@ -19,6 +20,9 @@ def proxy_get(path, timeout=10):
     try:
         r = urlopen(f"{API}{path}", timeout=timeout)
         return r.status, r.read()
+    except HTTPError as e:
+        # Preserve API error body (e.g. upstream Cursor failure) instead of losing it to str(e).
+        return e.code, e.read()
     except Exception as e:
         return 502, json.dumps({"error": str(e)}).encode()
 
@@ -31,6 +35,8 @@ def proxy_post(path, body=b"", timeout=60, extra_headers=None):
         req = Request(f"{API}{path}", data=body, method="POST", headers=headers)
         r = urlopen(req, timeout=timeout)
         return r.status, r.read()
+    except HTTPError as e:
+        return e.code, e.read()
     except Exception as e:
         return 502, json.dumps({"error": str(e)}).encode()
 

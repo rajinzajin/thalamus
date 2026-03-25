@@ -1037,8 +1037,12 @@ async def run_pipeline(
     original_format = req.original_format
     valid_tool_names = [(t.get("function") or t).get("name", "") for t in tools]
 
-    full_system = (req.system or "") + THALAMUS_INSTRUCTION_SUPPLEMENT
-    messages = [{"role": "system", "content": full_system}] + messages
+    # Claude Code relay context only when the client registered tools.
+    full_system = req.system or ""
+    if tools:
+        full_system += THALAMUS_INSTRUCTION_SUPPLEMENT
+    if full_system:
+        messages = [{"role": "system", "content": full_system}] + messages
 
     if req.metadata:
         logger.info(f"[{request_id}] CC metadata: {json.dumps(req.metadata, ensure_ascii=False)[:200]}")

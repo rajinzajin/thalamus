@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Thalamus</title>
@@ -79,25 +79,25 @@ textarea{min-height:60px;font-family:"SF Mono",Menlo,monospace;font-size:12px;li
 
   <!-- Status Card -->
   <div class="card">
-    <div class="row"><span class="lb">服务状态</span><span class="vl" id="ss"><span class="dot y"></span><span>启动中...</span></span></div>
+    <div class="row"><span class="lb">Service status</span><span class="vl" id="ss"><span class="dot y"></span><span>Starting…</span></span></div>
     <div class="dv"></div>
-    <div class="row"><span class="lb">Token</span><span class="vl" id="ts"><span class="dot r"></span><span>未登录</span></span></div>
+    <div class="row"><span class="lb">Token</span><span class="vl" id="ts"><span class="dot r"></span><span>Not signed in</span></span></div>
     <div class="row hidden" id="tpr"><span class="lb"></span><span class="pv" id="tp"></span></div>
   </div>
 
   <!-- Login Actions -->
   <div class="acts">
-    <button class="btn bp" id="loginBtn" onclick="doLogin()">🔑 登录 Cursor 账号</button>
-    <div class="hint hidden" id="pollHint">浏览器已打开，请完成登录...</div>
-    <button class="btn bd hidden" id="logoutBtn" onclick="doLogout()">退出登录</button>
-    <button class="btn bs hidden" id="reloginBtn" onclick="doLogin()">🔄 重新登录</button>
+    <button class="btn bp" id="loginBtn" onclick="doLogin()">🔑 Sign in with Cursor</button>
+    <div class="hint hidden" id="pollHint">Browser opened — complete sign-in…</div>
+    <button class="btn bd hidden" id="logoutBtn" onclick="doLogout()">Sign out</button>
+    <button class="btn bs hidden" id="reloginBtn" onclick="doLogin()">🔄 Sign in again</button>
   </div>
 
   <!-- Test: Models -->
   <div class="card test-section">
     <div class="row">
-      <span class="card-title">📡 模型列表</span>
-      <button class="btn bs btn-sm" id="fetchModelsBtn" onclick="fetchModels()">获取模型</button>
+      <span class="card-title">📡 Models</span>
+      <button class="btn bs btn-sm" id="fetchModelsBtn" onclick="fetchModels()">Fetch models</button>
     </div>
     <div id="modelGrid" class="model-grid hidden"></div>
     <div id="modelResult" class="result-box"></div>
@@ -105,9 +105,9 @@ textarea{min-height:60px;font-family:"SF Mono",Menlo,monospace;font-size:12px;li
 
   <!-- Test: Messages -->
   <div class="card test-section">
-    <span class="card-title">💬 消息测试</span>
+    <span class="card-title">💬 Message test</span>
     <div class="row">
-      <span class="lb">模型</span>
+      <span class="lb">Model</span>
       <select id="modelSelect" style="width:220px">
         <option value="claude-sonnet-4-20250514">claude-sonnet-4</option>
         <option value="claude-3.5-sonnet">claude-3.5-sonnet</option>
@@ -117,17 +117,17 @@ textarea{min-height:60px;font-family:"SF Mono",Menlo,monospace;font-size:12px;li
         <option value="fast">fast (auto fallback)</option>
       </select>
     </div>
-    <textarea id="msgInput" placeholder="输入测试消息..." rows="2">用一句话介绍你自己</textarea>
+    <textarea id="msgInput" placeholder="Enter a test message…" rows="2">Introduce yourself in one sentence.</textarea>
     <div class="btn-row">
-      <button class="btn bp btn-sm" style="flex:1" id="sendBtn" onclick="sendMessage()">发送测试</button>
-      <button class="btn bs btn-sm" onclick="clearResult()">清空</button>
+      <button class="btn bp btn-sm" style="flex:1" id="sendBtn" onclick="sendMessage()">Send test</button>
+      <button class="btn bs btn-sm" onclick="clearResult()">Clear</button>
     </div>
     <div id="msgLatency" class="latency"></div>
     <div id="msgResult" class="result-box"></div>
   </div>
 
   <div class="port-info">
-    服务: <code>http://localhost:3013</code> &nbsp;|&nbsp; UI: <code>http://localhost:3014</code>
+    API: <code>http://localhost:3013</code> &nbsp;|&nbsp; UI: <code>http://localhost:3014</code>
   </div>
 </div>
 
@@ -142,30 +142,30 @@ function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');set
 function setSS(s,l){const c=s==='ok'?'g':s==='w'?'y':'r';$('ss').innerHTML='<span class="dot '+c+'"></span><span>'+l+'</span>'}
 function setTS(h,p){
   const e=$('ts');
-  if(h){e.innerHTML='<span class="dot g"></span><span>已登录</span>';$('tpr').classList.remove('hidden');$('tp').textContent=p||'';$('loginBtn').classList.add('hidden');$('logoutBtn').classList.remove('hidden');$('reloginBtn').classList.remove('hidden');$('pollHint').classList.add('hidden');stopPoll()}
-  else{e.innerHTML='<span class="dot r"></span><span>未登录</span>';$('tpr').classList.add('hidden');$('loginBtn').classList.remove('hidden');$('logoutBtn').classList.add('hidden');$('reloginBtn').classList.add('hidden')}
+  if(h){e.innerHTML='<span class="dot g"></span><span>Signed in</span>';$('tpr').classList.remove('hidden');$('tp').textContent=p||'';$('loginBtn').classList.add('hidden');$('logoutBtn').classList.remove('hidden');$('reloginBtn').classList.remove('hidden');$('pollHint').classList.add('hidden');stopPoll()}
+  else{e.innerHTML='<span class="dot r"></span><span>Not signed in</span>';$('tpr').classList.add('hidden');$('loginBtn').classList.remove('hidden');$('logoutBtn').classList.add('hidden');$('reloginBtn').classList.add('hidden')}
 }
 
 async function ck(){
   try{
     const r=await fetch(A+'/health');if(!r.ok)throw 0;
-    await r.json();setSS('ok','运行中');$('loginBtn').disabled=false;
+    await r.json();setSS('ok','Running');$('loginBtn').disabled=false;
     const tr=await fetch(A+'/token_status');
     if(tr.ok){const td=await tr.json();setTS(td.has_token,td.token_preview)}
     return true
-  }catch{setSS('w','启动中...');$('loginBtn').disabled=true;return false}
+  }catch{setSS('w','Starting…');$('loginBtn').disabled=true;return false}
 }
 
 async function doLogin(){
-  $('loginBtn').disabled=true;$('loginBtn').innerHTML='<span class="spinner"></span> 跳转中...';
+  $('loginBtn').disabled=true;$('loginBtn').innerHTML='<span class="spinner"></span> Opening…';
   try{const r=await fetch(A+'/login');const d=await r.json();
     if(d.url&&d.session_id){sid=d.session_id;$('loginBtn').classList.add('hidden');$('pollHint').classList.remove('hidden');startPoll()}
-    else{toast('登录失败');resetBtn()}}catch{toast('无法连接');resetBtn()}
+    else{toast('Sign-in failed');resetBtn()}}catch{toast('Cannot connect');resetBtn()}
 }
-function resetBtn(){$('loginBtn').classList.remove('hidden');$('loginBtn').disabled=false;$('loginBtn').innerHTML='🔑 登录 Cursor 账号';$('pollHint').classList.add('hidden')}
-function startPoll(){stopPoll();pollTimer=setInterval(async()=>{if(!sid)return;try{const r=await fetch(A+'/poll?session_id='+sid);const d=await r.json();if(d.status==='ok'){sid=null;toast('✅ 登录成功！');await ck()}else if(d.status==='error'){toast('会话过期');stopPoll();resetBtn()}}catch{}},2000)}
+function resetBtn(){$('loginBtn').classList.remove('hidden');$('loginBtn').disabled=false;$('loginBtn').innerHTML='🔑 Sign in with Cursor';$('pollHint').classList.add('hidden')}
+function startPoll(){stopPoll();pollTimer=setInterval(async()=>{if(!sid)return;try{const r=await fetch(A+'/poll?session_id='+sid);const d=await r.json();if(d.status==='ok'){sid=null;toast('✅ Signed in successfully');await ck()}else if(d.status==='error'){toast('Session expired');stopPoll();resetBtn()}}catch{}},2000)}
 function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null}}
-async function doLogout(){try{await fetch(A+'/clear',{method:'POST'});toast('已退出');setTS(false);resetBtn()}catch{toast('失败')}}
+async function doLogout(){try{await fetch(A+'/clear',{method:'POST'});toast('Signed out');setTS(false);resetBtn()}catch{toast('Failed')}}
 
 // === Models ===
 async function fetchModels(){
@@ -182,7 +182,7 @@ async function fetchModels(){
     const d=await r.json();
 
     if(d.error){
-      res.innerHTML='<span class="err">错误: '+escHtml(JSON.stringify(d.error))+'</span>';
+      res.innerHTML='<span class="err">Error: '+escHtml(JSON.stringify(d.error))+'</span>';
       res.classList.add('visible');
     } else if(d.data){
       grid.innerHTML='';
@@ -204,27 +204,27 @@ async function fetchModels(){
         }
       });
       grid.classList.remove('hidden');
-      res.innerHTML='<span class="ok">✅ 获取到 '+d.data.length+' 个模型</span>  <span class="info">('+ms+'ms)</span>';
+      res.innerHTML='<span class="ok">✅ Fetched '+d.data.length+' models</span>  <span class="info">('+ms+'ms)</span>';
       res.classList.add('visible');
     }
   }catch(e){
-    res.innerHTML='<span class="err">请求失败: '+escHtml(e.message)+'</span>';
+    res.innerHTML='<span class="err">Request failed: '+escHtml(e.message)+'</span>';
     res.classList.add('visible');
   }
-  btn.disabled=false;btn.textContent='获取模型';
+  btn.disabled=false;btn.textContent='Fetch models';
 }
 
 // === Messages ===
 async function sendMessage(){
   const model=$('modelSelect').value;
   const msg=$('msgInput').value.trim();
-  if(!msg){toast('请输入消息');return}
+  if(!msg){toast('Enter a message');return}
 
   const btn=$('sendBtn');
   const res=$('msgResult');
   const lat=$('msgLatency');
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> 请求中...';
-  res.innerHTML='<span class="info">正在请求 '+escHtml(model)+' ...</span>';
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Requesting…';
+  res.innerHTML='<span class="info">Requesting '+escHtml(model)+' …</span>';
   res.classList.add('visible');
   lat.textContent='';
 
@@ -249,7 +249,7 @@ async function sendMessage(){
     if(r.ok && d.content){
       let text='';
       d.content.forEach(b=>{if(b.type==='text')text+=b.text});
-      res.innerHTML='<span class="ok">模型: '+escHtml(d.model||model)+'</span>\n'
+      res.innerHTML='<span class="ok">Model: '+escHtml(d.model||model)+'</span>\n'
         +'<span class="info">stop_reason: '+(d.stop_reason||'?')+'</span>\n'
         +'<span class="info">tokens: in='+((d.usage||{}).input_tokens||'?')+' out='+((d.usage||{}).output_tokens||'?')+'</span>\n\n'
         +escHtml(text);
@@ -258,10 +258,10 @@ async function sendMessage(){
       res.innerHTML='<span class="err">HTTP '+r.status+'</span>\n'+escHtml(errMsg);
     }
   }catch(e){
-    res.innerHTML='<span class="err">请求失败: '+escHtml(e.message)+'</span>';
+    res.innerHTML='<span class="err">Request failed: '+escHtml(e.message)+'</span>';
     lat.textContent='';
   }
-  btn.disabled=false;btn.innerHTML='发送测试';
+  btn.disabled=false;btn.innerHTML='Send test';
 }
 
 function clearResult(){$('msgResult').classList.remove('visible');$('msgResult').innerHTML='';$('msgLatency').textContent=''}

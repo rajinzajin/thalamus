@@ -24,7 +24,21 @@ _TIMEOUT = httpx.Timeout(120.0, connect=10.0)
 
 
 def _build_ssl_context() -> ssl.SSLContext:
-    ctx = ssl.create_default_context()
+    """TLS context with a reliable CA bundle.
+
+    Stock Python on macOS often ships without a usable default CA store, which
+    yields CERTIFICATE_VERIFY_FAILED against api2.cursor.sh. Prefer certifi's
+    bundle; override with SSL_CERT_FILE for a custom CA (e.g. corporate proxy).
+    """
+    cafile = os.environ.get("SSL_CERT_FILE") or None
+    if not cafile:
+        try:
+            import certifi
+
+            cafile = certifi.where()
+        except ImportError:
+            cafile = None
+    ctx = ssl.create_default_context(cafile=cafile) if cafile else ssl.create_default_context()
     ctx.set_alpn_protocols(["h2"])
     return ctx
 

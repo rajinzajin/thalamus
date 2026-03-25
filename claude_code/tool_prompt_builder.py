@@ -283,13 +283,16 @@ def inject_tool_prompt_into_messages(
     Inserts full tool descriptions (via build_tool_call_prompt) so the model
     knows every available tool and its parameters.  Uses Anthropic native JSON
     format for tool_use/tool_result serialization in conversation history.
+
+    When ``tools`` is empty (e.g. desktop UI smoke test, plain chat), skip the
+    Claude Code bootstrap turns and tool-schema preamble — they force a Chinese
+    "Claude Code via thalamus" persona unrelated to the user's actual prompt.
     """
     result: list[dict] = []
 
-    result.append({"role": "user", "content": TURN1_USER})
-    result.append({"role": "assistant", "content": TURN2_ASSISTANT})
-
     if tools:
+        result.append({"role": "user", "content": TURN1_USER})
+        result.append({"role": "assistant", "content": TURN2_ASSISTANT})
         tool_prompt = build_tool_call_prompt(tools)
         result.append({"role": "user", "content": tool_prompt})
         result.append({"role": "assistant", "content": "(tools noted, ready to use them)"})
