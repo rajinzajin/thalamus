@@ -57,6 +57,36 @@ from config.fallback_config import load_fallback_config
 
 logger = ThalamusStructuredLogger.get_logger("pipeline", "DEBUG")
 
+
+def _env_int_positive(name: str, default: int) -> int:
+    raw = os.environ.get(name)
+    if raw is None or not str(raw).strip():
+        return default
+    try:
+        v = int(str(raw).strip(), 10)
+        return max(1, v)
+    except ValueError:
+        return default
+
+
+def _env_float_non_negative(name: str, default: float) -> float:
+    raw = os.environ.get(name)
+    if raw is None or not str(raw).strip():
+        return default
+    try:
+        v = float(str(raw).strip())
+        return max(0.0, v)
+    except ValueError:
+        return default
+
+
+# Streaming to OpenAI/Anthropic SSE clients: tiny chunks plus per-chunk sleeps
+# (old defaults: 8 chars, up to 15ms sleep) stretched long replies by many seconds
+# and kept clients in "streaming" state. Tune via env; zero delays = flush ASAP.
+DELTA_TARGET_SIZE = _env_int_positive("THALAMUS_SSE_CHUNK_CHARS", 512)
+MIN_EVENT_DELAY = _env_float_non_negative("THALAMUS_SSE_MIN_DELAY_SEC", 0.0)
+MAX_EVENT_DELAY = _env_float_non_negative("THALAMUS_SSE_MAX_DELAY_SEC", 0.0)
+
 FATAL_ERROR_PATTERNS: list[re.Pattern] = [
     re.compile(r"unable\s+to\s+reach\s+the\s+model\s+provider", re.I),
     re.compile(r"trouble\s+connecting", re.I),
@@ -720,8 +750,26 @@ async def _call_cursor_direct(
         # ── Continuation retry: no tool_calls AND no task_complete → not done ──
         # The ONLY way to signal "done" is task_complete. No task_complete = keep going.
         # This is purely mechanical — no heuristics, no "is it a tool_result" guessing.
+        #
+        # SKIP when streaming: the streaming caller (e.g. OpenClaw agent) manages its
+        # own turn loop. Hidden retries here only add dead latency while the client
+        # sits on "streaming" with no visible progress, and the retry text is never
+        # forwarded to the SSE stream (no on_stream_delta callback on retries).
         first_text = consumed["text"]
         first_thinking = consumed["thinking"]
+
+        if on_stream_delta is not None:
+            logger.info(
+                f"[{request_id}] Streaming mode — skipping continuation retries "
+                f"(text_len={len(first_text)}, no tool_calls, no task_complete)"
+            )
+            return {
+                "text": first_text,
+                "thinking": first_thinking,
+                "model": current_model,
+                "fallback_attempts": len(tried_models),
+                "stats": {"passed": 0, "normalized": 0, "filtered": 0, "invalid_arguments_filtered": 0},
+            }
 
         cont_retries = 0
         accumulated_text = first_text
@@ -996,15 +1044,6 @@ def _first_error_detail(errors: list) -> str:
         or getattr(err, "message", None)
         or err
     )
-
-
-# ---------------------------------------------------------------------------
-# Streaming delta granularity — split large Cursor chunks into small SSE events
-# ---------------------------------------------------------------------------
-
-DELTA_TARGET_SIZE = 8  # chars per SSE event, simulates token-level streaming
-MIN_EVENT_DELAY = 0.003   # seconds — fast drain when queue is backlogged
-MAX_EVENT_DELAY = 0.015   # seconds — smooth pacing when stream is trickling in
 
 
 # ---------------------------------------------------------------------------

@@ -126,7 +126,9 @@ async def create_message(request: Request):
                 media_type="text/event-stream",
                 headers={
                     "Cache-Control": "no-cache, no-transform",
-                    "Connection": "keep-alive",
+                    # Match OpenAI route: close after stream so clients see EOF right after
+                    # the terminal SSE event; keep-alive can delay completion in some runtimes.
+                    "Connection": "close",
                     "X-Accel-Buffering": "no",
                     "X-Thalamus-Request-Id": request_id,
                 },

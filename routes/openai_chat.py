@@ -133,7 +133,10 @@ async def chat_completions(request: Request):
                 media_type="text/event-stream",
                 headers={
                     "Cache-Control": "no-cache, no-transform",
-                    "Connection": "keep-alive",
+                    # Close after stream so OpenAI-compatible clients (e.g. OpenClaw / pi-ai)
+                    # see EOF right after [DONE]. Keep-alive can leave some runtimes waiting
+                    # for more bytes, delaying stream completion and leaving UIs stuck on "streaming".
+                    "Connection": "close",
                     "X-Accel-Buffering": "no",
                     "X-Thalamus-Request-Id": request_id,
                 },
